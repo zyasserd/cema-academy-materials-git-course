@@ -1,22 +1,19 @@
 ---
-name: Using Data from the Warehouse Instead of CSVs on GitHub
+name: Using Data from the Warehouse
 dependsOn: [Working_Safely_with_Git.working_safely_with_git.04_storing_data_in_the_warehouse]
-tags: [git, github, data-warehouse, api, reproducibility, data-protection]
+tags: [git, github, data-warehouse, api, reproducibility]
 learningOutcomes:
-  - Explain why analysis data should be read from the CEMA Data Warehouse rather than committed to GitHub.
-  - Generate a warehouse API token and store it outside the repository.
-  - Discover datasets and their columns through the warehouse API.
-  - Read warehouse datasets into R and Python with a pinned version and selected columns.
-  - Interpret warehouse API errors and fix common problems.
-  - Migrate an existing repository from committed CSV files to warehouse API calls.
+  - Discover datasets and their columns through the warehouse API
+  - Read warehouse datasets into R and Python with a pinned version and selected columns
+  - Interpret warehouse API errors and fix common problems
+  - Migrate an existing repository from committed CSV files to warehouse API calls
 ---
 
-# Using Data from the Warehouse Instead of CSVs on GitHub
+# Using Data from the Warehouse
 
-## The one rule
-
-> **GitHub stores code. The CEMA Data Warehouse stores data.**
-> Your repository holds the *recipe*, never the *ingredients*.
+> **Before you start.** This lesson assumes you have an approved warehouse
+> account and an API token stored in `.Renviron` or `.env`, as set up in
+> lesson 04. If `Sys.getenv("CEMA_WAREHOUSE_TOKEN")` is empty, go back there.
 
 A very common project layout looks like this:
 
@@ -30,23 +27,22 @@ malaria-analysis/
 ```
 
 Someone exports a table, commits it, and everyone analyses their own copy.
-The previous lesson, *Storing Data in the Warehouse*, explained why this is
-unsafe and what belongs in the warehouse. This lesson shows how to replace
-those files with code that reads the data straight from the warehouse.
+Lesson 04 explained why that is unsafe. This lesson replaces those files with
+code that reads the data straight from the warehouse, so the repository holds
+the *recipe* and never the *ingredients*.
 
 ## How the warehouse API works
 
-The [CEMA Data Warehouse](https://warehouse.cema.africa) has a REST API. Your
-script asks for a dataset each time it runs, and the warehouse sends back the
-rows:
+Your script asks for a dataset each time it runs, and the warehouse sends back
+the rows:
 
 ```text
  your script --HTTPS: dataset slug + options + token--> warehouse.cema.africa
              <------------- CSV or JSON rows ---------
 ```
 
-Anyone with warehouse access who clones your repository can reproduce your
-work with their own token. Anyone without access sees no data at all.
+Anyone with warehouse access who clones your repository can reproduce your work
+with their own token. Anyone without access sees no data at all.
 
 A request is just a web address:
 
@@ -55,91 +51,30 @@ https://warehouse.cema.africa/api/v2/dataset/sth-subcounty-2023
     ?fmt=csv&version=1&cols=county,year&token=XXXX
 ```
 
-- `sth-subcounty-2023` is the dataset's **slug**: the last part of its page
-  URL in the warehouse (`/datasets/sth-subcounty-2023`).
+- `sth-subcounty-2023` is the dataset's **slug**: the last part of its page URL
+  in the warehouse (`/datasets/sth-subcounty-2023`).
 - Everything after `?` are **options**, joined with `&`.
 - `token=XXXX` proves who you are.
 
-## Step 1: Get an account and a token
-
-You need an approved warehouse account and an API token (**Profile >
-Generate token**). See *How to get access* in the previous lesson.
-
-## Step 2: Store the token outside your code
-
-### R: `.Renviron`
-
-Create a file called `.Renviron` in the project root:
-
-```text
-CEMA_WAREHOUSE_TOKEN=paste-your-token-here
-```
-
-Restart R, then check that it was picked up:
-
-```r
-nchar(Sys.getenv("CEMA_WAREHOUSE_TOKEN")) > 0
-```
-
-### Python: `.env`
-
-Create a file called `.env` in the project root with the same line. The
-`python-dotenv` package loads it.
-
-### Ignore the real file, commit a template
-
-Add the secrets files and data formats to `.gitignore`:
-
-```text
-# secrets
-.Renviron
-.env
-
-# data: lives in the warehouse, never in Git
-data/
-output/
-*.csv
-*.xlsx
-*.rds
-*.dta
-*.parquet
-```
-
-Commit **example** files with no real value, so collaborators know which
-variable to set:
-
-```bash
-echo "CEMA_WAREHOUSE_TOKEN=" > .Renviron.example
-echo "CEMA_WAREHOUSE_TOKEN=" > .env.example
-git add .gitignore .Renviron.example .env.example
-git status        # .Renviron and .env must NOT be listed
-git commit -m "Add warehouse token templates and ignore rules"
-```
-
-## Step 3: Discover datasets in the browser
+## Finding a dataset
 
 While logged in to the warehouse in your browser, your session counts as
-authentication, so you can explore the API without a token:
+authentication, so you can explore without a token:
 
-- `https://warehouse.cema.africa/api/v2/datasets` lists every dataset you
-  can access.
-- `https://warehouse.cema.africa/api/v2/dataset/<slug>/columns` lists a
-  dataset's columns and their types.
-- `https://warehouse.cema.africa/api/v2/dataset/<slug>?limit=5` shows the
-  first five rows as JSON.
+| Open in the browser | Shows |
+|---|---|
+| `/api/v2/datasets` | Every dataset you can access |
+| `/api/v2/dataset/<slug>/columns` | A dataset's columns and their types |
+| `/api/v2/dataset/<slug>?limit=5` | Its first five rows, as JSON |
+| [`/api/docs`](https://warehouse.cema.africa/api/docs) | The interactive API reference |
 
-There is also an interactive reference at
-<https://warehouse.cema.africa/api/docs>.
+Each entry in the dataset list has a `storage_type`. `database` means tabular
+data you can read through the API; `sftp` means a stored file (PDF, Word,
+archive) to download from the dataset page instead.
 
-Each entry in the dataset list includes a `storage_type`:
+## The options that matter
 
-- `database`: tabular data that you can read through the API.
-- `sftp`: a stored file (PDF, Word document, archive). Download it from the
-  dataset page in your browser instead.
-
-## Step 4: Know the options
-
-These options work on `/api/v2/dataset/<slug>`:
+These work on `/api/v2/dataset/<slug>`:
 
 | Option    | Example                  | Meaning                             |
 |-----------|--------------------------|-------------------------------------|
@@ -149,21 +84,22 @@ These options work on `/api/v2/dataset/<slug>`:
 | `limit`   | `limit=1000`             | First *n* rows (1 to 100,000)       |
 | `sample`  | `sample=500`             | Random *n* rows (1 to 10,000)       |
 
-- **Always use `fmt=csv` in scripts.** CSV is streamed, so large tables work
-  and there is no row cap. JSON is loaded into memory first.
+Three habits carry most of the value:
+
+- **Always `fmt=csv` in scripts.** CSV is streamed, so large tables work and
+  there is no row cap. JSON is loaded into memory first.
 - **Pin `version` for any result that goes into a report or paper.** The
-  warehouse keeps every version, so anyone re-running your code next year
-  gets exactly the same rows.
-- **Use `cols`** to fetch only what you need. It is faster and keeps less
-  data, especially personal data, on your laptop.
-- `limit` and `sample` cannot be combined. Leave both out to get all rows.
+  warehouse keeps every version, so code re-run next year returns the same rows.
+- **Use `cols`** to fetch only what you need. Faster, and it keeps less personal
+  data on your laptop.
 
-## Step 5: Read data from R
+`limit` and `sample` cannot be combined. Leave both out to get all rows.
 
-Save this helper as `R/warehouse.R` in your project. It builds the request,
-reads the CSV response, and turns warehouse errors into readable messages
-without ever printing your token. It needs the `curl`, `jsonlite`, and
-`data.table` packages.
+## Reading data in R
+
+Save this helper as `R/warehouse.R`. It builds the request, reads the CSV
+response, and turns warehouse errors into readable messages without ever
+printing your token. It needs `curl`, `jsonlite` and `data.table`.
 
 ```r
 WAREHOUSE_URL <- "https://warehouse.cema.africa"
@@ -214,35 +150,25 @@ read_warehouse <- function(slug, version = NULL, cols = NULL,
 }
 ```
 
-Then use it in your analysis:
+Then, in your analysis:
 
 ```r
 source("R/warehouse.R")
 
-# 1. discover
-ds <- list_datasets()
-ds[ds$storage_type == "database", c("slug", "display_name", "version")]
-warehouse_columns("sth-subcounty-2023")
+warehouse_columns("sth-subcounty-2023")            # what is in it?
+peek <- read_warehouse("sth-subcounty-2023", sample = 500)   # explore
 
-# 2. explore with a small random sample
-peek <- read_warehouse("sth-subcounty-2023", sample = 500)
-
-# 3. analyse: full data, pinned version, only the columns you need
-sth <- read_warehouse(
+sth <- read_warehouse(                             # analyse
   "sth-subcounty-2023",
   version = 1,
   cols = c("county", "subcounty", "year", "prevalence")
 )
 ```
 
-## Step 6: Read data from Python
+## Reading data in Python
 
-Save this helper as `warehouse.py`. It needs `requests`, `pandas`, and
-`python-dotenv`:
-
-```bash
-pip install requests pandas python-dotenv
-```
+The same three functions, as `warehouse.py`. It needs
+`pip install requests pandas python-dotenv`.
 
 ```python
 """Read data from the CEMA Data Warehouse API."""
@@ -288,8 +214,7 @@ def list_datasets():
 
 def warehouse_columns(slug):
     """Column names and types of one dataset."""
-    r = _get(f"/api/v2/dataset/{slug}/columns")
-    return pd.DataFrame(r.json()["columns"])
+    return pd.DataFrame(_get(f"/api/v2/dataset/{slug}/columns").json()["columns"])
 
 
 def read_warehouse(slug, version=None, cols=None, limit=None, sample=None):
@@ -304,29 +229,54 @@ def read_warehouse(slug, version=None, cols=None, limit=None, sample=None):
     return pd.read_csv(io.StringIO(r.content.decode("utf-8")))
 ```
 
-Use it in your analysis:
-
 ```python
-from warehouse import list_datasets, read_warehouse, warehouse_columns
-
-ds = list_datasets()
-print(ds[ds.storage_type == "database"][["slug", "display_name"]])
-print(warehouse_columns("sth-subcounty-2023"))
-
-peek = read_warehouse("sth-subcounty-2023", sample=500)
+from warehouse import read_warehouse, warehouse_columns
 
 sth = read_warehouse(
     "sth-subcounty-2023",
     version=1,
     cols=["county", "subcounty", "year", "prevalence"],
 )
-print(sth.head())
 ```
 
-## Step 7: Document the data in your README
+## When it does not work
 
-List every dataset the project uses, with its pinned version, so a reader
-knows exactly what the results are based on:
+The warehouse answers errors with JSON that usually says what to fix, and the
+helpers above show that message.
+
+| Status | Meaning                        | Fix                                |
+|--------|--------------------------------|------------------------------------|
+| `400`  | Bad option or a file dataset   | Read `error`, `hint`, `valid_cols` |
+| `401`  | Missing, wrong, or old token   | Check `.Renviron`/`.env`, restart  |
+| `403`  | No access (HBTAP, private DHS) | Ask the data steward or an admin   |
+| `404`  | Wrong slug or version          | Check `/api/v2/datasets`           |
+| `500`  | Server problem                 | Retry later, then tell the admins  |
+
+A `401` with the token sitting right there in `.Renviron` almost always means R
+has not been restarted. To test a request by hand, paste it **without the
+token** into a browser tab where you are logged in; your session stands in for
+it. Never paste a token into a terminal command, where it lands in your shell
+history.
+
+## Caching, and what to put in the README
+
+For a big table you re-run often, download it once into the git-ignored `data/`
+folder, with the version in the filename so the cache cannot go stale unnoticed:
+
+```r
+cache <- "data/sth-subcounty-2023_v1.csv"
+if (!file.exists(cache)) {
+  dir.create("data", showWarnings = FALSE)
+  data.table::fwrite(read_warehouse("sth-subcounty-2023", version = 1), cache)
+}
+sth <- data.table::fread(cache)
+```
+
+Intermediate outputs belong in the same ignored folders. Derived datasets that
+others will reuse go **back into the warehouse** with their provenance filled
+in, not into the repository.
+
+Then tell the next reader what the results rest on:
 
 ```markdown
 ## Data
@@ -340,109 +290,31 @@ repository.
 
 ## How to run
 
-1. Generate an API token on your warehouse profile page.
-2. Copy `.Renviron.example` to `.Renviron` (R) or `.env.example` to `.env`
-   (Python) and paste your token in.
-3. Restart R and run `analysis.R`.
+1. Copy `.Renviron.example` to `.Renviron` and paste in your warehouse token.
+2. Restart R and run `analysis.R`.
 ```
 
-## When it does not work
+## Migrating a repository that already holds data
 
-The warehouse answers errors with JSON that usually says what to fix. The
-helpers above show that message.
-
-| Status | Meaning                        | Fix                                |
-|--------|--------------------------------|------------------------------------|
-| `400`  | Bad option or a file dataset   | Read `error`, `hint`, `valid_cols` |
-| `401`  | Missing, wrong, or old token   | Check `.Renviron`/`.env`, restart  |
-| `403`  | No access (HBTAP, private DHS) | Ask the data steward or an admin   |
-| `404`  | Wrong slug or version          | Check `/api/v2/datasets`           |
-| `500`  | Server problem                 | Retry later, then tell the admins  |
-
-Debugging tips:
-
-- `Sys.getenv("CEMA_WAREHOUSE_TOKEN")` is empty? Restart R after editing
-  `.Renviron`.
-- Paste the request URL **without the token** into a browser tab where you
-  are logged in to the warehouse; your session works in place of the token.
-- Do not paste the token into terminal commands; it ends up in your shell
-  history.
-
-## Caching large datasets locally
-
-For a big table you re-run often, download it once into the git-ignored
-`data/` folder. Put the version in the file name so the cache can never go
-silently stale:
-
-```r
-cache <- "data/sth-subcounty-2023_v1.csv"
-
-if (!file.exists(cache)) {
-  dir.create("data", showWarnings = FALSE)
-  data.table::fwrite(read_warehouse("sth-subcounty-2023", version = 1), cache)
-}
-
-sth <- data.table::fread(cache)
-```
-
-Delete local copies when the project ends.
-
-## Where outputs and derived data go
-
-- **Intermediate files** (cleaned tables, model fits, figures) go in `data/`
-  or `output/`. Both are ignored, so they stay on your machine.
-- **Derived datasets that others will reuse** are **uploaded to the
-  warehouse** (Upload page), not emailed or committed. Fill in the
-  provenance, including your **GitHub repository link**, so the data points
-  back to the code that made it. Uploading an update creates a new version
-  and keeps the old ones.
-- A **tiny, fully synthetic** dataset needed for tests may live in the
-  repository, clearly named (for example `tests/example_synthetic.csv`).
-  Never commit a "sample" of real records.
-
-## Migrating an existing repository
-
-If your repository already contains data files:
-
-1. **Make sure the data is in the warehouse.** If it is not, upload it (as
-   `.csv`, `.xlsx`, or `.parquet`) with its provenance filled in.
+1. **Check the data is in the warehouse.** If not, upload it with its
+   provenance, as in lesson 04.
 2. **Switch the code** from `read.csv("data/...")` to
-   `read_warehouse("<slug>", version = N)`. Check that row counts and key
+   `read_warehouse("<slug>", version = N)`, and confirm row counts and key
    totals match the old file.
-3. **Stop tracking the files** and ignore them:
+3. **Stop tracking the files:** `git rm --cached -r data/`, add `data/` to
+   `.gitignore`, commit.
+4. **If any file held personal data, or a token was ever committed**, it is
+   still in the history. Rotate the token immediately, then follow *If it has
+   already been committed* in lesson 02: rotate, report, clean up.
 
-   ```bash
-   git rm --cached -r data/
-   echo "data/" >> .gitignore
-   git add .gitignore R/warehouse.R analysis.R
-   git commit -m "Read data from the warehouse instead of committed files"
-   ```
-
-4. **If the files contained personal or sensitive data**, removing them from
-   the latest commit is not enough; they are still in the history. Treat it
-   as a data incident: tell the data steward and the warehouse admins the
-   same day. The history must be rewritten and everyone must re-clone (see
-   *Ignoring Files and Protecting Data*).
-5. **If a token was ever committed**, click **Generate token** on your
-   warehouse profile immediately. The old token stops working at once.
-
-## Checklist before you push
-
-- [ ] `git status` shows no data files (`.csv`, `.xlsx`, `.rds`, `.dta`,
-      `.parquet`) staged.
-- [ ] The token comes from `.Renviron` / `.env`, never from code.
-- [ ] `fmt=csv` is used for anything bigger than a quick look.
-- [ ] Every dataset that feeds a result is read with a pinned `version`.
-- [ ] `cols` fetches only the columns you need.
-- [ ] The README lists dataset slugs and versions.
-- [ ] The code runs from a fresh clone with someone else's token.
-
-## Practice
+Before you push, check that `git status` lists no `.csv`, `.xlsx`, `.rds`,
+`.dta` or `.parquet` files, that every dataset feeding a result has a pinned
+`version`, and that the code runs from a fresh clone using someone else's token.
 
 ::::challenge{id=git_warehouse_migration title="Swap a CSV for the warehouse"}
 
-Your project has the following `analysis.R`, and `data/sth.csv` is committed
-to the repository:
+Your project has the following `analysis.R`, and `data/sth.csv` is committed to
+the repository:
 
 ```r
 sth <- read.csv("data/sth.csv")
@@ -451,22 +323,16 @@ totals <- aggregate(prevalence ~ county, data = sth, FUN = mean)
 
 The same data is in the warehouse as `sth-subcounty-2023`, version 1.
 
-1. Store your token safely and add a template for collaborators.
-2. Rewrite the analysis to read from the warehouse, pinned to version 1 and
+1. Rewrite the analysis to read from the warehouse, pinned to version 1 and
    fetching only the columns it needs.
-3. Stop tracking the CSV and prevent data files from being committed again.
-4. Swap repositories with a partner. Clone theirs, add your own token, and
-   run it. It should work without them sending you any file.
+2. Stop tracking the CSV and prevent data files from being committed again.
+3. Swap repositories with a partner. Clone theirs, add your own token, and run
+   it. It should work without them sending you any file.
 
 :::solution
 
-```bash
-echo "CEMA_WAREHOUSE_TOKEN=<your-token>" > .Renviron
-echo "CEMA_WAREHOUSE_TOKEN=" > .Renviron.example
-printf '.Renviron\n.env\ndata/\noutput/\n*.csv\n' >> .gitignore
-```
-
-Save the helper from Step 5 as `R/warehouse.R`, then change `analysis.R` to:
+Save the helper from this lesson as `R/warehouse.R`, then change `analysis.R`
+to:
 
 ```r
 source("R/warehouse.R")
@@ -481,17 +347,19 @@ totals <- aggregate(prevalence ~ county, data = sth, FUN = mean)
 
 ```bash
 git rm --cached data/sth.csv
+printf 'data/\noutput/\n*.csv\n' >> .gitignore
 git add .gitignore .Renviron.example R/warehouse.R analysis.R
 git status        # .Renviron and data/ must not be listed
 git commit -m "Read STH data from the warehouse instead of committed CSV"
 git push
 ```
 
-Your partner clones the repository, copies `.Renviron.example` to
-`.Renviron`, pastes their own token, restarts R, and runs `analysis.R`.
+Your partner clones the repository, copies `.Renviron.example` to `.Renviron`,
+pastes their own token, restarts R, and runs `analysis.R`.
 
-If `sth.csv` held identifiable data, it is still in the history: tell the
-data steward and warehouse admins.
+If `sth.csv` held identifiable data, it is still in the history: rotate nothing
+(there is no token), but tell the data steward and warehouse admins the same
+day, and follow the procedure in lesson 02.
 
 :::
 

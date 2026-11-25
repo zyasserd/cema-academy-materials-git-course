@@ -5,6 +5,9 @@ tags: [git]
 learningOutcomes:
   - Describe repositories, commits and remotes
   - Run the everyday Git loop from clone to push
+  - Inspect what you are about to commit before you commit it
+  - Undo a change that has not been committed yet
+  - Recover when a push is rejected because someone else pushed first
   - Explain why anything committed stays in Git history
 ---
 
@@ -35,8 +38,107 @@ git push                     # send your commits to GitHub
 git pull                     # get other people's changes
 ```
 
-Make a habit of running `git status` and `git diff` **before every commit**.
-They are the last chance to spot a file that shouldn't be there.
+That is the whole loop. Most days you will run nothing else.
+
+## Look before you commit
+
+The commands in the middle of that loop are the ones worth slowing down for.
+They are your last chance to spot a file that should not be there, and they
+cost a few seconds:
+
+| Command | Answers |
+|---|---|
+| `git status` | Which files have changed, and which are staged for the next commit? |
+| `git diff` | How did the files I have **not** staged change? |
+| `git diff --staged` | What exactly am I about to commit? |
+| `git log --oneline` | What has been committed before? |
+
+`git status` is the one to internalise. Its output has three parts, and the
+middle one is where accidents live:
+
+```text
+$ git status
+On branch main
+Changes to be committed:        # staged: these go into the next commit
+        modified:   analysis.R
+
+Changes not staged for commit:  # changed, but not staged
+        modified:   README.md
+
+Untracked files:                # Git has never seen these
+        data/patients_2026.csv
+        .env
+```
+
+Those last two lines are exactly what the rest of this course is about. Git is
+telling you it has noticed a data file and a secrets file, and is waiting to be
+told what to do with them. `git add .` at this point would stage both.
+
+## Undoing things before you commit
+
+Nothing here has been committed yet, so nothing is permanent and everything is
+easy to fix:
+
+```bash
+git restore README.md          # throw away unstaged changes to a file
+git restore --staged .env      # unstage a file, keep it on disk
+git rm --cached .env           # stop tracking a file, keep it on disk
+```
+
+`git restore --staged` is the one to reach for the moment you notice you have
+staged something you did not mean to. **Before** a commit, this is a non-event.
+After a commit, it is a different lesson.
+
+## When someone else pushed first
+
+Everyone here works on `main`, so sooner or later two people commit at once and
+your push is rejected:
+
+```text
+$ git push
+ ! [rejected]        main -> main (fetch first)
+error: failed to push some refs to 'github.com:CEMA-DataScience/example-repo.git'
+hint: Updates were rejected because the remote contains work that you do not
+hint: have locally.
+```
+
+Nothing is broken and nothing is lost. GitHub has commits you do not. Bring
+them in, then push again:
+
+```bash
+git pull        # fetch their commits and combine them with yours
+git push        # now your commits go up too
+```
+
+If you both changed **different** files, that is the end of it. If you both
+changed the **same lines** of the same file, Git stops and asks you to choose:
+
+```text
+Auto-merging analysis.R
+CONFLICT (content): Merge conflict in analysis.R
+```
+
+`git status` lists the conflicted files. Open each one and you will find both
+versions marked:
+
+```text
+<<<<<<< HEAD
+incidence <- cases / population * 1000      # your version
+=======
+incidence <- cases / population * 100000    # their version
+>>>>>>> origin/main
+```
+
+Delete the markers and the version you do not want, keep the line you do, then:
+
+```bash
+git add analysis.R
+git commit            # completes the merge
+git push
+```
+
+If it looks like a mess, ask a colleague before experimenting. Conflicts are
+normal, and pulling **before** you start work each day makes them rare.
 
 > **A note on branches.** You may have heard of branches, and you will see a
 > `main` branch in every repository you clone. Working on *other* branches, and

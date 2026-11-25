@@ -22,7 +22,7 @@ access to it. The rule is simple:
 
 ## Why data lives in the warehouse, not in repos
 
-### Four situations that sound familiar
+### Three situations that sound familiar
 
 These are *not* real CEMA incidents. They are everyday situations, and each
 one leads to a leak.
@@ -39,11 +39,6 @@ one leads to a leak.
   token into `analysis.R` to get a quick result before a county meeting, then
   pushes it. Her account has HBTAP access. Anyone who finds that token now
   sees everything she can see.
-- **"The consultant needed the data."** A collaborator from another
-  institution is added to the GitHub repository to help with a model. The
-  contract ends, but they still have a full clone, including every dataset
-  that was ever committed.
-
 ### It happens to large organisations too
 
 Each of these has happened, at scale, to organisations with full security
@@ -60,54 +55,19 @@ teams:
 - **US healthcare (2020).** A researcher searching GitHub found passwords and
   data belonging to nine hospitals and health insurers. Records of an
   estimated 150,000 to 200,000 patients were open to anyone.
-- **Mercedes-Benz (2024).** An employee's GitHub token left in a public
-  repository gave full access to the company's internal code server.
 
-Security company GitGuardian found over 10 million passwords, tokens, and
-keys in public GitHub code in 2022, and 12.8 million in 2023. Bots search
-GitHub around the clock for exactly these. The warehouse sees the same bots
-every day, asking for files such as `/.env` and `/.git/config`: the files
-people accidentally publish.
+GitGuardian found 12.8 million passwords, tokens and keys in public GitHub
+code in 2023 alone. Bots search for them around the clock, and the warehouse
+sees the same bots every day asking for `/.env` and `/.git/config`.
 
-What these incidents teach us:
+Four things follow from this: **private is not safe** (repositories get made
+public, forked, and cloned onto laptops that get lost), **Git never forgets and
+nobody warns you**, **a token is your account**, and **health data is the
+target** — once copied, it cannot be recalled.
 
-- **Private is not safe.** Repositories get made public, shared, forked, and
-  cloned onto laptops that get lost.
-- **Git never forgets, and nobody warns you.** A deleted file stays in the
-  history.
-- **A token is your account.** It carries all of your access.
-- **Health data is the target**, and once copied it cannot be recalled.
-
-### See it for yourself: "but I deleted it!"
-
-Run this in a scratch folder. It uses fake data only.
-
-```bash
-mkdir leak-demo && cd leak-demo && git init -q
-
-# 1. commit a (fake) line list
-printf 'patient_id,name,phone\n1001,Jane Wanjiku,0712000000\n' > linelist.csv
-git add linelist.csv && git commit -qm "add data"
-
-# 2. realise the mistake and delete it
-git rm -q linelist.csv && git commit -qm "remove data"
-ls                                   # the folder is empty...
-
-# 3. ...but anyone with the repository can bring it back
-git log --all --oneline -- linelist.csv
-git show HEAD~1:linelist.csv
-```
-
-The last command prints the "deleted" patient record. The same is true for a
-token:
-
-```bash
-echo 'token <- "a1b2c3d4e5"' > analysis.R
-git add analysis.R && git commit -qm "analysis"
-echo 'token <- Sys.getenv("CEMA_WAREHOUSE_TOKEN")' > analysis.R
-git commit -qam "hide token"
-git log -p | grep a1b2c3d4e5         # still there
-```
+You proved the second point yourself in the *Is it really gone?* challenge in
+lesson 01: `git show HEAD~1:notes.txt` printed a file that had been deleted and
+committed. A line list behaves no differently, and neither does a token.
 
 ### Access control and auditability
 
@@ -140,40 +100,10 @@ Under the **Kenya Data Protection Act, 2019**:
 - The ODPC can fine up to KES 5 million or 1% of annual turnover, whichever
   is lower. Unlawful disclosure can also be a criminal offence.
 
-On top of that, your **ethics approval**, **data-sharing agreements** with
-counties and ministries, and the **DHS terms of use** say where data may be
-kept. GitHub is never on that list, and a leak can cost CEMA its next
-data-sharing agreement.
-
-::::challenge{id=git_find_the_leak title="Find the leak"}
-
-Your facilitator shares a practice repository with a fake token and a fake
-line list hidden in its history. Using `git log --all --stat`, `git log -p`,
-and `git show <commit>:<file>`, find:
-
-1. which commit added the data file, and who made it;
-2. the token;
-3. how many commits later each one was "removed".
-
-If this were your thesis repository and it had been public for a month, what
-would you do?
-
-:::solution
-
-```bash
-git log --all --stat              # find the commit that added the file
-git log -p | grep -i token        # find the token in the diffs
-git show <commit>:<file>          # print the "deleted" file
-```
-
-If it were real: **generate a new warehouse token immediately** (the old one
-stops working at once), then **tell the data steward and the warehouse
-admins the same day**. The history has to be rewritten and everyone who
-cloned the repository must delete their copy. Do not try to fix it quietly.
-
-:::
-
-::::
+Your **ethics approval**, **data-sharing agreements** with counties and
+ministries, and the **DHS terms of use** also say where data may be kept.
+GitHub is never on that list, and a leak can cost CEMA its next data-sharing
+agreement.
 
 ## What belongs there
 
@@ -313,13 +243,24 @@ to read data from the warehouse.
 
 - **It is your account.** Whoever holds it sees everything you can,
   including HBTAP data if you have access.
-- Keep it in `.Renviron` or `.env` only. Never put it in code, notebooks,
-  WhatsApp, Slack, or email, and never share it with a colleague; they should
-  get their own account.
+- Store it the way lesson 02 showed: in `.Renviron` (R) or `.env` (Python),
+  both git-ignored, with a committed `.Renviron.example` or `.env.example`
+  listing the variable name and no value. Never in code, notebooks, WhatsApp,
+  Slack, or email, and never shared with a colleague; they get their own
+  account.
+
+  ```bash
+  echo "CEMA_WAREHOUSE_TOKEN=<your-token>" > .Renviron
+  echo "CEMA_WAREHOUSE_TOKEN=" > .Renviron.example
+  printf '.Renviron\n.env\n' >> .gitignore
+  git status        # .Renviron must not be listed
+  ```
+
 - **Think it leaked?** Click **Generate token** again. The old token stops
   working immediately. Then tell the warehouse admins.
 
-The next lesson shows how to use the token to connect from R and Python.
+Everything in the next lesson assumes you have an approved account and a token
+stored this way.
 
 ### 4. Upload your data
 
@@ -337,28 +278,22 @@ The next lesson shows how to use the token to connect from R and Python.
 
 ::::challenge{id=git_warehouse_setup title="Get set up"}
 
-1. Log in to the warehouse and generate your token.
-2. Save it in `.Renviron` (R) or `.env` (Python) in your course repository,
-   then run `git status` to check that the file does not appear.
-3. Convert a practice `.rds` or `.dta` file to Parquet and upload it to the
+1. Log in to the warehouse, generate your token, and store it as shown above.
+   Run `git status` and confirm the file holding it does not appear.
+2. Convert a practice `.rds` or `.dta` file to Parquet and upload it to the
    **Training** category, linking your course repository in the provenance.
-4. Delete your local copy. In the next lesson you will read it back from the
+3. Delete your local copy. In the next lesson you will read it back from the
    warehouse.
 
 :::solution
-
-```bash
-echo "CEMA_WAREHOUSE_TOKEN=<your-token>" > .Renviron
-echo ".Renviron" >> .gitignore
-git status        # .Renviron must not be listed
-```
 
 ```r
 arrow::write_parquet(readRDS("practice.rds"), "practice.parquet")
 ```
 
-Upload `practice.parquet` through the **Upload** page, fill in the
-provenance, then delete both local files.
+Upload `practice.parquet` through the **Upload** page, fill in the provenance,
+then delete both local files. If `git status` listed `.Renviron`, your
+`.gitignore` is missing the rule from lesson 03.
 
 :::
 
@@ -382,7 +317,6 @@ Reporting early is never the wrong call.
 - Toyota: Toyota Motor Corporation statement on T-Connect, October 2022.
 - US healthcare: Jelle Ursem and DataBreaches.net, *No need to hack when it's
   leaking*, August 2020.
-- Mercedes-Benz: RedHunt Labs disclosure, January 2024.
 - Secret counts: GitGuardian, *State of Secrets Sprawl* reports, 2023 and
   2024.
 - Kenya Data Protection Act, 2019, and ODPC enforcement notices.
