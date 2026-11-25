@@ -8,6 +8,7 @@ learningOutcomes:
   - Recognise personal and identifying information and why it cannot be committed
   - Keep credentials out of scripts by reading them from the environment
   - Use the .env.example pattern to share configuration safely
+  - "Follow the standard procedure when a secret or sensitive file has been committed: rotate, report, clean up"
 ---
 
 # What Goes In, What Stays Out
@@ -135,7 +136,7 @@ Two habits that catch this before it is too late:
 - Search a script for `password`, `token`, `api_key` and `secret` before you commit it.
 - Run `git diff --staged` before you commit. It shows exactly what you are about to send, and a hardcoded credential is obvious there.
 
-If a credential has already been committed, do not just delete the line. Rotate it first, then follow *When Something Goes Wrong*.
+If a credential has already been committed, do not just delete the line. Follow the procedure below.
 
 ## Sharing configuration safely: `.env.example`
 
@@ -157,6 +158,81 @@ DB_PASSWORD=s3cr3t-value
 ```
 
 A new team member copies `.env.example` to `.env` and fills it in from **Passbolt**, CEMA's password manager.
+
+## If it has already been committed
+
+Sooner or later someone commits a `.env`, a line list or a password. It is a
+normal mistake, and what matters is what happens next. Deleting the file in a
+new commit is **not** a fix: the earlier commit still contains it, and anyone
+with the repository can read it.
+
+The standard procedure, in this order:
+
+### 1. Rotate or revoke, immediately
+
+Treat the secret as public from the moment it was pushed. It may already have
+been cloned, cached by GitHub, or picked up by a scanner.
+
+- Change the password, or revoke and reissue the token or key, at its **source**:
+  the warehouse, the HMIS instance, the database, the cloud provider.
+- Store the new value in **Passbolt**, never back into the repository.
+- Update the servers and colleagues that used the old value.
+
+Rotation is first because it is the only step that actually ends the exposure.
+Cleaning history on a credential that is still valid changes nothing.
+
+### 2. Report it
+
+Tell someone the same day, even if you have already rotated the secret. You are
+not reporting to be blamed; you are reporting so that the people who can check
+for misuse know to look.
+
+Report to:
+
+- **Your line manager or project lead**, and
+- **SAIT**, for anything involving a server, a service account or a deploy key, and
+- **CEMA's Data Protection Officer**, if the exposed file contained personal or
+  health data. Exposure of personal data can be a reportable incident under the
+  Data Protection Act, and that assessment is not yours to make alone.
+
+Say what was exposed, which repository and branch, when it was pushed, whether
+the repository is public or private, and whether the credential has been rotated.
+
+### 3. Clean up the history
+
+Only now deal with the repository itself.
+
+Stop tracking the file and ignore it so it cannot come back:
+
+```bash
+git rm --cached .env
+echo ".env" >> .gitignore
+git add .gitignore
+git commit -m "Stop tracking .env"
+git push
+```
+
+That removes it from **future** commits. Removing it from past commits means
+rewriting history, which changes every commit after the one you edit and
+affects everyone who has cloned the repository. **Do not attempt this alone**:
+ask SAIT or the Data Science team to do it with
+[`git filter-repo`](https://github.com/newren/git-filter-repo), and agree a time
+with everyone working on the repository, since they will each need to re-clone
+afterwards.
+
+Even after a rewrite, assume the old value is compromised. GitHub keeps
+unreferenced commits reachable for a period, forks keep their own copies, and
+any clone taken before the rewrite still has the secret. The rewrite tidies the
+repository; **step 1 is what protects you**.
+
+### What not to do
+
+| Don't | Why |
+|---|---|
+| Commit a "fix" that just deletes the file | The secret stays in history, and the commit message advertises where to find it |
+| Keep the credential and "watch for misuse" | You cannot see most misuse, and a valid leaked credential stays valid |
+| Delete the repository to make it go away | It destroys the audit trail and any forks keep working |
+| Say nothing because it is a private repository | Every member of the organisation, and every future member, can read it |
 
 ## Watch out for `git add .`
 

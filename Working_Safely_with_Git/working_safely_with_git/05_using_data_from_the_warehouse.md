@@ -1,6 +1,6 @@
 ---
 name: Using Data from the Warehouse Instead of CSVs on GitHub
-dependsOn: [Working_Safely_with_Git.working_safely_with_git.05_when_something_goes_wrong]
+dependsOn: [Working_Safely_with_Git.working_safely_with_git.04_storing_data_in_the_warehouse]
 tags: [git, github, data-warehouse, api, reproducibility, data-protection]
 learningOutcomes:
   - Explain why analysis data should be read from the CEMA Data Warehouse rather than committed to GitHub.

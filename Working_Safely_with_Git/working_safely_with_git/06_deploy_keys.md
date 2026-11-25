@@ -1,6 +1,6 @@
 ---
 name: "Optional: Creating and Configuring GitHub Deploy Keys"
-dependsOn: [Working_Safely_with_Git.working_safely_with_git.06_using_data_from_the_warehouse]
+dependsOn: [Working_Safely_with_Git.working_safely_with_git.05_using_data_from_the_warehouse]
 tags: [git, github, ssh, deployment, security]
 learningOutcomes:
   - Explain what a deploy key is and when to use one instead of a personal access token

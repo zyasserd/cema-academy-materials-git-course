@@ -102,7 +102,7 @@ git commit -m "Stop tracking patients.csv"
 ```
 
 This removes the file from **future** commits, but it is **still in the history** (remember the Git Refresher challenge).
-If the file contained a secret or sensitive data, follow *When Something Goes Wrong*.
+If the file contained a secret or sensitive data, follow *If it has already been committed* in *What Goes In, What Stays Out*: rotate the credential, report it, and only then clean up the history.
 
 ::::challenge{id=gitignore_check title="Prove your .gitignore works"}
 In your practice repository:
