@@ -118,13 +118,15 @@ The full procedure is in lesson 02, *If it has already been committed*.
 |---|---|
 | [CEMA-DataScience on GitHub](https://github.com/CEMA-DataScience) | Code repositories |
 | [CEMA Data Warehouse](https://warehouse.cema.africa) | Datasets, API tokens — lessons 04 and 05 |
-| Passbolt | CEMA's password manager, for every credential in this course |
+| [Passbolt](https://passbolt-dev.cema.africa) | CEMA's password manager, for every credential in this course |
 | SAIT | Servers, service accounts, deploy keys, history rewrites |
 
-> **To confirm before delivery:** the Passbolt URL, how to contact SAIT (ticket
-> queue, Slack channel or email), the name and contact details of CEMA's Data
-> Protection Officer, and the warehouse access-request route. These are referred
-> to by name throughout the course but are not written down anywhere in it.
+> **To confirm before delivery:** how to contact SAIT (ticket queue, Slack
+> channel or email), the name and contact details of CEMA's Data Protection
+> Officer, and the warehouse access-request route. These are referred to by name
+> throughout the course but are not written down anywhere in it. Also confirm
+> that `passbolt-dev.cema.africa` is the instance staff should actually use —
+> the hostname reads like a development deployment.
 
 ## Further reading
 

@@ -157,7 +157,8 @@ DB_USER=jdoe
 DB_PASSWORD=s3cr3t-value
 ```
 
-A new team member copies `.env.example` to `.env` and fills it in from **Passbolt**, CEMA's password manager.
+A new team member copies `.env.example` to `.env` and fills it in from
+[**Passbolt**](https://passbolt-dev.cema.africa), CEMA's password manager.
 
 ## If it has already been committed
 

@@ -40,11 +40,11 @@ merge conflicts. Those are deliberately out of scope.
 | A GitHub account, with 2FA enabled | github.com, using your CEMA email address |
 | Membership of the CEMA organisation | Ask your line manager to request it |
 | Git installed locally | `git --version` should print a version |
-| A Passbolt account | CEMA's password manager, for storing credentials |
+| A Passbolt account | [passbolt-dev.cema.africa](https://passbolt-dev.cema.africa), CEMA's password manager |
 | A warehouse account and API token | Covered in lessons 04 and 05 |
 
 > **To confirm before delivery:** the exact names of the CEMA GitHub
-> organisations, who approves membership, and the Passbolt URL. The table above
+> organisations, and who approves membership. The table above
 > names the one organisation referenced in these materials
 > ([CEMA-DataScience](https://github.com/CEMA-DataScience)); if your team's work
 > lives elsewhere, tell the course maintainer so this table can be corrected.
