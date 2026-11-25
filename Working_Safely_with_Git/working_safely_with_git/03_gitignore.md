@@ -1,6 +1,6 @@
 ---
 name: Protecting Your Repo with .gitignore
-dependsOn: [Working_Safely_with_Git.working_safely_with_git.03_what_goes_in_what_stays_out]
+dependsOn: [Working_Safely_with_Git.working_safely_with_git.02_what_goes_in_what_stays_out]
 tags: [git, security]
 learningOutcomes:
   - Explain what a .gitignore file does and where it lives

@@ -3,7 +3,7 @@ name: Git Refresher
 dependsOn: [Working_Safely_with_Git.working_safely_with_git.00_introduction]
 tags: [git]
 learningOutcomes:
-  - Describe repositories, commits, branches and remotes
+  - Describe repositories, commits and remotes
   - Run the everyday Git loop from clone to push
   - Explain why anything committed stays in Git history
 ---
@@ -19,7 +19,6 @@ If you already use Git every day, skim it and do the challenge at the end. The c
 |---|---|
 | **Repository (repo)** | A project folder whose full history Git tracks |
 | **Commit** | A saved snapshot of the project at a point in time |
-| **Branch** | An independent line of work inside a repo |
 | **Remote** | A copy of the repo hosted elsewhere, e.g. on GitHub (`origin`) |
 | **Staging area** | Where you put the changes you want in your next commit |
 
@@ -27,18 +26,23 @@ If you already use Git every day, skim it and do the challenge at the end. The c
 
 ```bash
 git clone https://github.com/CEMA-DataScience/example-repo.git   # get a copy
-git switch -c my-change      # start a branch
 # ...edit files...
 git status                   # see what changed
 git diff                     # see exactly how it changed
 git add analysis.R           # stage specific files
 git commit -m "Add incidence plot"
-git push -u origin my-change # send your branch to GitHub
+git push                     # send your commits to GitHub
 git pull                     # get other people's changes
 ```
 
 Make a habit of running `git status` and `git diff` **before every commit**.
 They are the last chance to spot a file that shouldn't be there.
+
+> **A note on branches.** You may have heard of branches, and you will see a
+> `main` branch in every repository you clone. Working on *other* branches, and
+> reviewing changes through pull requests, matters once several people edit the
+> same project at once. That is the subject of the follow-on course, and this one
+> does not need it: everything here works on `main`.
 
 ## Git never forgets
 

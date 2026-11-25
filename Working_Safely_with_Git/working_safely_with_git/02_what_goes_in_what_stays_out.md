@@ -1,6 +1,6 @@
 ---
 name: What Goes In, What Stays Out
-dependsOn: [Working_Safely_with_Git.working_safely_with_git.02_branches_and_pull_requests]
+dependsOn: [Working_Safely_with_Git.working_safely_with_git.01_git_refresher]
 tags: [git, security]
 learningOutcomes:
   - Identify which files belong in a repository
@@ -133,7 +133,7 @@ In Python the equivalent is `os.environ["HMIS_PASSWORD"]`, with the values in a 
 Two habits that catch this before it is too late:
 
 - Search a script for `password`, `token`, `api_key` and `secret` before you commit it.
-- Read the **Files changed** tab of your pull request. A hardcoded credential is obvious there.
+- Run `git diff --staged` before you commit. It shows exactly what you are about to send, and a hardcoded credential is obvious there.
 
 If a credential has already been committed, do not just delete the line. Rotate it first, then follow *When Something Goes Wrong*.
 

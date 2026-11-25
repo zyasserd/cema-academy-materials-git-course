@@ -1,6 +1,6 @@
 ---
 name: When Something Goes Wrong
-dependsOn: [Working_Safely_with_Git.working_safely_with_git.05_storing_data_in_the_warehouse]
+dependsOn: [Working_Safely_with_Git.working_safely_with_git.04_storing_data_in_the_warehouse]
 tags: [git, security]
 learningOutcomes:
   - Respond correctly after committing a secret or a data file
