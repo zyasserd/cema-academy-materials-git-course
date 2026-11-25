@@ -1,6 +1,6 @@
 ---
 name: Storing Data in the Warehouse
-dependsOn: [version_control_with_git.git_and_github_fundamentals.05_collaborating_on_github]
+dependsOn: [Working_Safely_with_Git.working_safely_with_git.04_gitignore]
 tags: [git, data]
 learningOutcomes:
   - Explain why data belongs in the warehouse rather than in a repository

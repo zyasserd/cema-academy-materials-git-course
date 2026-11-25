@@ -1,6 +1,6 @@
 ---
 name: Appendix
-dependsOn: [Working_Safely_with_Git.working_safely_with_git.06_when_something_goes_wrong]
+dependsOn: [Working_Safely_with_Git.working_safely_with_git.07_using_data_from_the_warehouse]
 tags: [git, github]
 learningOutcomes:
   - Use the command cheat sheet as a day-to-day reference
